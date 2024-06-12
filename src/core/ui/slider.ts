@@ -89,6 +89,9 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
   let mousewheelDisabled = false;
   let animateOnClick: string | undefined = ANIMATE_ON_CLICK_DEFAULT;
 
+  let eventName: 'mousedown' | 'mouseup' | 'mousemove' | 'wheel' | 'touchemove' | 'touchstart' | string |undefined = undefined
+  let touchClientX: number;
+
   const ariaLabels: (string | undefined)[] = [];
 
   // -------------- EVENTS --------------------
@@ -113,6 +116,8 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
 
     rangeDraggingStart = undefined;
     rangeDraggingDiff = undefined;
+
+    onValueChange(evt);
 
     window.removeEventListener('mousemove', onValueChange);
     window.removeEventListener('mouseup', onMouseUp);
@@ -202,19 +207,24 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
   };
 
   const onValueChange = (evt: MouseEvent | TouchEvent) => {
+    setEventType(evt.type);
+
+    if (evt instanceof TouchEvent && evt.touches[0]) {
+      touchClientX = evt.touches[0].clientX
+    }
 
     // find the percent [0, 100] of the current mouse position in vertical or horizontal slider
     let percent;
 
     if(type === TypeEnum.Vertical){
       const { height: boxHeight, top: boxTop } = $slider.getBoundingClientRect();
-      const mouseY = evt.type.indexOf('mouse') !== -1 ? (evt as MouseEvent).clientY : (evt as TouchEvent).touches[0].clientY;
+      const mouseY = evt.type.indexOf('mouse') !== -1 ? (evt as MouseEvent).clientY : touchClientX;
       const top = Math.min(Math.max(0, mouseY - boxTop), boxHeight);
       percent = (top * 100) / boxHeight;
     }
     else{
       const { width: boxWidth, left: boxLeft } = $slider.getBoundingClientRect();
-      const mouseX = evt.type.indexOf('mouse') !== -1 ? (evt as MouseEvent).clientX : (evt as TouchEvent).touches[0].clientX;
+      const mouseX = evt.type.indexOf('mouse') !== -1 ? (evt as MouseEvent).clientX : touchClientX;
       const left = Math.min(Math.max(0, mouseX - boxLeft), boxWidth);
       percent = (left * 100) / boxWidth;
     }
@@ -256,6 +266,8 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
   };
 
   const pointerMouseWheel = (evt: WheelEvent) => {
+    setEventType(evt.type);
+
     if (disabled ||
       document.activeElement !== $component ||
       selectedPointer?.disabled) return;
@@ -465,6 +477,9 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
   };
 
   // -------------- Getters --------------------
+const getEventType = () => {
+  return eventName;
+}
 
   const getPointerLeftWall = (pointerIndex: number) => {
     if(pointersOverlap || pointers.length <= 1 || max === min) return undefined;
@@ -662,6 +677,9 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
 
   // -------------- Setters --------------------
 
+  const setEventType = (_eventName: string) => {
+    eventName = _eventName;
+  }
   const setPositions = (index: number, _percent: number | undefined) => {
     if(_percent === undefined) return;
 
@@ -1092,6 +1110,7 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
     $slider.addEventListener('mouseup', onMouseUp);
     $slider.addEventListener('touchmove', onValueChange);
     $slider.addEventListener('touchstart', onValueChange);
+    $slider.addEventListener('touchend', onValueChange);
 
     if(!mousewheelDisabled){
       document.addEventListener('wheel', pointerMouseWheel, { passive: false });
@@ -1123,6 +1142,7 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
         getPercents,
         getValues,
         getPointerElements,
+        getActivePointerIndex: getSelectedPointerIndex,
 
         getMin: getNumericMin,
         getMax: getNumericMax,
@@ -1146,6 +1166,8 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
         isRangeDraggingEnabled,
         getPointersMinDistance,
         getPointersMaxDistance,
+
+        getEventName: getEventType
       }
     );
     pluginsManager.init();

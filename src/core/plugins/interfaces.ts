@@ -55,6 +55,7 @@ export interface IPluginGetters {
   getPercents: () => number[];
   getValues: () => (string | number | undefined)[];
   getPointerElements: () => HTMLElement[];
+  getActivePointerIndex: () => number;
 
   getMin: () => number;
   getMax: () => number;
@@ -77,6 +78,8 @@ export interface IPluginGetters {
   isRangeDraggingEnabled: () => boolean;
   getPointersMinDistance: () => number;
   getPointersMaxDistance: () => number;
+
+  getEventName: () => 'mousedown' | 'mouseup' | 'mousemove' | 'wheel' | 'touchemove' | 'touchstart' | 'touchend' | string | undefined
 }
 
 export interface IPlugin {

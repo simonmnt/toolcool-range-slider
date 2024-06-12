@@ -17,6 +17,7 @@ const DEFAULT_TOOLTIP_WIDTH = 'auto';
 const DEFAULT_TOOLTIP_HEIGHT = 30;
 const DEFAULT_TOOLTIP_BG = '#475569';
 const DEFAULT_TOOLTIP_TEXT_COLOR = '#fff';
+const DEFAULT_TOOLTIP_HIDDEN = false;
 const DEFAULT_Z_INDEX = 20;
 
 const MovingTooltipPlugin = () : IPlugin => {
@@ -30,6 +31,7 @@ const MovingTooltipPlugin = () : IPlugin => {
   let tooltipHeight = DEFAULT_TOOLTIP_HEIGHT;
   let tooltipBg = DEFAULT_TOOLTIP_BG;
   let tooltipTextColor = DEFAULT_TOOLTIP_TEXT_COLOR;
+  let tooltipHidden = DEFAULT_TOOLTIP_HIDDEN;
   let tooltipUnits = '';
   let unitType = '';
 
@@ -49,6 +51,7 @@ const MovingTooltipPlugin = () : IPlugin => {
     $tooltipsRow = document.createElement('div');
     $tooltipsRow.classList.add('tooltips');
     $slider.prepend($tooltipsRow);
+
     updateRowClass();
   };
 
@@ -56,6 +59,11 @@ const MovingTooltipPlugin = () : IPlugin => {
     const $tooltip = document.createElement('div');
     $tooltip.style.zIndex = DEFAULT_Z_INDEX.toString();
     $tooltip.className = className;
+
+    if (tooltipHidden) {
+      $tooltip.style.opacity = '0';
+    }
+
     return $tooltip;
   };
 
@@ -172,6 +180,11 @@ const MovingTooltipPlugin = () : IPlugin => {
     updateTooltips();
   };
 
+  const settooltipHidden = (newValue: boolean) => {
+    tooltipHidden = newValue;
+    updateTooltips();
+  };
+
   const setUnitType = (newValue: string) => {
     unitType = newValue;
     updateTooltips();
@@ -183,41 +196,43 @@ const MovingTooltipPlugin = () : IPlugin => {
   };
 
   const update = (data: IPluginUpdateData) => {
-
     if(!enabled || !data.values) return;
 
     const $pointers = getters?.getPointerElements() ?? [];
+    const activePointerIndex = getters?.getActivePointerIndex() ?? undefined;
     const type = getters?.getType() ?? 'horizontal';
 
-    for(let i=0; i<data.values.length; i++) {
-      const value = data.values[i];
-      const $tooltip = $tooltips[i];
+    if (activePointerIndex === undefined) return;
 
-      if(value === undefined && !!$tooltip){
-        // remove the tooltip
-        $tooltip.remove();
-        $tooltips[i] = undefined;
-        continue;
-      }
+    const value = data.values[activePointerIndex];
+    const $tooltip = $tooltips[activePointerIndex];
 
-      if(value !== undefined && !$tooltip){
+    if(value === undefined && !!$tooltip){
+      $tooltip.remove();
+      $tooltips[activePointerIndex] = undefined;
+    }
 
-        // create the tooltip
-        const $tooltip = createTooltip(`tooltip tooltip-${ i + 1 }`);
-        const text = (value ?? '').toString();
-        $tooltip.textContent = getTooltipText(text);
-        $tooltip.style.position = 'absolute';
-        updateTooltip($tooltip, type, $pointers[i].style.left, $pointers[i].style.top, $pointers[i].style.zIndex);
+    if(value !== undefined && !$tooltip){
 
-        $tooltips[i] = $tooltip;
-        $tooltipsRow?.append($tooltip);
-      }
-
-      if(!$tooltip) continue;
-
+      const $tooltip = createTooltip(`tooltip tooltip-${ activePointerIndex + 1 }`);
       const text = (value ?? '').toString();
       $tooltip.textContent = getTooltipText(text);
-      updateTooltip($tooltip, type, $pointers[i].style.left, $pointers[i].style.top, $pointers[i].style.zIndex);
+      $tooltip.style.position = 'absolute';
+      updateTooltip($tooltip, type, $pointers[activePointerIndex].style.left, $pointers[activePointerIndex].style.top, $pointers[activePointerIndex].style.zIndex);
+
+      $tooltips[activePointerIndex] = $tooltip;
+      $tooltipsRow?.append($tooltip);
+    }
+
+    if ($tooltip) {
+        const text = (value ?? '').toString();
+        $tooltip.textContent = getTooltipText(text);
+
+        if (tooltipHidden) {
+          $tooltip.style.opacity = getters?.getEventName() === 'mouseup' || getters?.getEventName() === 'touchend' ? '0' : '1'
+        }
+
+        updateTooltip($tooltip, type, $pointers[activePointerIndex].style.left, $pointers[activePointerIndex].style.top, $pointers[activePointerIndex].style.zIndex);
     }
   };
 
@@ -261,6 +276,7 @@ const MovingTooltipPlugin = () : IPlugin => {
       tooltipBg = _$component.getAttribute('moving-tooltip-bg') || DEFAULT_TOOLTIP_BG;
       tooltipTextColor = _$component.getAttribute('moving-tooltip-text-color') || DEFAULT_TOOLTIP_TEXT_COLOR;
       tooltipUnits = _$component.getAttribute('moving-tooltip-units') || '';
+      tooltipHidden = getBoolean(_$component.getAttribute('moving-tooltip-hidden')) || DEFAULT_TOOLTIP_HIDDEN
       unitType = _$component.getAttribute('moving-tooltip-units-type') || '';
       toggleEnabled(getBoolean(_$component.getAttribute('moving-tooltip')));
     },
@@ -304,6 +320,10 @@ const MovingTooltipPlugin = () : IPlugin => {
 
       if(_attrName === 'moving-tooltip-units'){
         setTooltipUnits(_newValue);
+      }
+
+      if(_attrName === 'moving-tooltip-hidden'){
+        settooltipHidden(getBoolean(_newValue));
       }
 
       if(_attrName === 'moving-tooltip-units-type'){
@@ -408,6 +428,19 @@ const MovingTooltipPlugin = () : IPlugin => {
       },
 
       {
+        name: 'tooltipHidden',
+        attributes: {
+          get () {
+            return tooltipHidden;
+          },
+
+          set: (_value) => {
+            settooltipHidden(getBoolean(_value));
+          },
+        }
+      },
+
+      {
         name: 'tooltipUnitType',
         attributes: {
           get () {
@@ -503,6 +536,7 @@ export interface IMovingTooltipPlugin extends RangeSlider{
   tooltipBg: string;
   tooltipTextColor: string;
   tooltipUnits: string;
+  tooltipHidden: boolean;
   tooltipUnitType: string;
 
   // https://github.com/mzusin/toolcool-range-slider/issues/16

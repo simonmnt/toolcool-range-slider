@@ -105,7 +105,11 @@ const BindingLabelsPlugin = () : IPlugin => {
       paths[i] = labelPath;
 
       // set current value
-      $label.textContent = values[i]?.toString() ?? '';
+      if ($label instanceof HTMLInputElement) {
+        $label.value = values[i]?.toString() ?? '';
+      } else {
+        $label.textContent = values[i]?.toString() ?? '';
+      }
 
       if(i === 0){
         initApiProp(`valueLabel`, i);
@@ -158,7 +162,12 @@ const BindingLabelsPlugin = () : IPlugin => {
         if(!$label) continue;
 
         const value = data.values[i] ?? '';
-        $label.textContent = value.toString();
+
+        if ($label instanceof HTMLInputElement) {
+          $label.value = value.toString() ?? '';
+        } else {
+          $label.textContent = value.toString() ?? '';
+        }
       }
     },
 

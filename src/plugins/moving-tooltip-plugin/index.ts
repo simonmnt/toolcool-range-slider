@@ -1,6 +1,6 @@
 import { IPlugin, IPluginGetters, IPluginSetters, IPluginUpdateData } from '../../core/plugins/interfaces';
 import RangeSlider from '../../core';
-import { getBoolean, getNumber } from '../../core/domain/math-provider';
+import { getBoolean, getNumber, isNumber } from '../../core/domain/math-provider';
 
 /**
  * Moving Tooltip Plugin.
@@ -13,7 +13,7 @@ import { getBoolean, getNumber } from '../../core/domain/math-provider';
 window.tcRangeSliderPlugins = window.tcRangeSliderPlugins || [];
 
 const DISTANCE_TO_POINTER_DEFAULT = 40; // px
-const DEFAULT_TOOLTIP_WIDTH = 35;
+const DEFAULT_TOOLTIP_WIDTH = 'auto';
 const DEFAULT_TOOLTIP_HEIGHT = 30;
 const DEFAULT_TOOLTIP_BG = '#475569';
 const DEFAULT_TOOLTIP_TEXT_COLOR = '#fff';
@@ -26,7 +26,7 @@ const MovingTooltipPlugin = () : IPlugin => {
 
   let enabled = false;
   let distanceToPointer = DISTANCE_TO_POINTER_DEFAULT; // px
-  let tooltipWidth = DEFAULT_TOOLTIP_WIDTH;
+  let tooltipWidth: string | number = DEFAULT_TOOLTIP_WIDTH;
   let tooltipHeight = DEFAULT_TOOLTIP_HEIGHT;
   let tooltipBg = DEFAULT_TOOLTIP_BG;
   let tooltipTextColor = DEFAULT_TOOLTIP_TEXT_COLOR;
@@ -71,7 +71,7 @@ const MovingTooltipPlugin = () : IPlugin => {
       $tooltip.style.top = `${ -distanceToPointer }px`;
     }
 
-    $tooltip.style.width = `${ tooltipWidth }px`;
+    $tooltip.style.width = `${ isNumber(tooltipWidth) ? tooltipWidth + 'px' : tooltipWidth }`;
     $tooltip.style.height = `${ tooltipHeight }px`;
     $tooltip.style.background = tooltipBg;
     $tooltip.style.color = tooltipTextColor;
@@ -147,7 +147,7 @@ const MovingTooltipPlugin = () : IPlugin => {
     updateTooltips();
   };
 
-  const setTooltipWidth = (newWidth: number) => {
+  const setTooltipWidth = (newWidth: number | string) => {
     tooltipWidth = newWidth;
     updateTooltips();
   };
@@ -447,6 +447,7 @@ const MovingTooltipPlugin = () : IPlugin => {
   text-align: center;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  padding: 0 4px;
   z-index: ${ DEFAULT_Z_INDEX };
 }  
 

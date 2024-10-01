@@ -91,6 +91,7 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
 
   let eventName: 'mousedown' | 'mouseup' | 'mousemove' | 'wheel' | 'touchemove' | 'touchstart' | string |undefined = undefined
   let touchClientX: number;
+  let touchClientY: number;
 
   const ariaLabels: (string | undefined)[] = [];
 
@@ -210,7 +211,11 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
     setEventType(evt.type);
 
     if (evt instanceof TouchEvent && evt.touches[0]) {
-      touchClientX = evt.touches[0].clientX
+      touchClientX = evt.touches[0].clientX;
+    }
+
+    if (evt instanceof TouchEvent && evt.touches[0]) {
+      touchClientY = evt.touches[0].clientY;
     }
 
     // find the percent [0, 100] of the current mouse position in vertical or horizontal slider
@@ -218,7 +223,7 @@ export const Slider = ($component: HTMLElement, $slider: HTMLElement, pointersLi
 
     if(type === TypeEnum.Vertical){
       const { height: boxHeight, top: boxTop } = $slider.getBoundingClientRect();
-      const mouseY = evt.type.indexOf('mouse') !== -1 ? (evt as MouseEvent).clientY : touchClientX;
+      const mouseY = evt.type.indexOf('mouse') !== -1 ? (evt as MouseEvent).clientY : touchClientY;
       const top = Math.min(Math.max(0, mouseY - boxTop), boxHeight);
       percent = (top * 100) / boxHeight;
     }
